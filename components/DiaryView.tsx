@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDiary } from '../hooks/useDiary';
-import DiaryDateNav from './diary/diaryDateNav';
-import DiaryMoodPicker from './diary/diaryMoodPicker';
+import DiaryDateNav from './diary/DiaryDateNav';
+import DiaryMoodPicker from './diary/DiaryMoodPicker';
 import DiaryThemePicker, { PaperTheme } from './diary/DiaryThemePicker';
 import DiaryPaper from './diary/DiaryPaper';
 import DiaryGallery from './diary/DiaryGallery';
