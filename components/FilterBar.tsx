@@ -106,11 +106,11 @@ const FilterBar: React.FC<FilterBarProps> = ({
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full pl-9 pr-2 py-3 bg-teal-50/80 hover:bg-teal-50 border border-teal-100 rounded-2xl text-xs sm:text-sm text-teal-900 focus:outline-none focus:ring-4 focus:ring-teal-100 font-bold cursor-pointer transition-all placeholder:text-teal-400"
+                                className={`w-full pl-9 pr-2 py-3 bg-teal-50/80 hover:bg-teal-50 border border-teal-100 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-teal-100 font-bold cursor-pointer transition-all placeholder:text-teal-400 ${!startDate ? 'text-transparent' : 'text-teal-900'} focus:text-teal-900`}
                                 placeholder="เริ่ม"
                                 style={{ colorScheme: 'light' }}
                             />
-                            {!startDate && <span className="absolute left-10 top-1/2 -translate-y-1/2 text-teal-400 text-xs sm:text-sm font-bold pointer-events-none">เริ่ม</span>}
+                            {!startDate && <span className="absolute left-10 top-1/2 -translate-y-1/2 text-teal-400 text-xs sm:text-sm font-bold pointer-events-none group-focus-within:hidden">เริ่ม</span>}
                         </div>
 
                         <div className="relative flex-1 group">
@@ -121,11 +121,11 @@ const FilterBar: React.FC<FilterBarProps> = ({
                                 type="date"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full pl-9 pr-2 py-3 bg-rose-50/80 hover:bg-rose-50 border border-rose-100 rounded-2xl text-xs sm:text-sm text-rose-900 focus:outline-none focus:ring-4 focus:ring-rose-100 font-bold cursor-pointer transition-all"
+                                className={`w-full pl-9 pr-2 py-3 bg-rose-50/80 hover:bg-rose-50 border border-rose-100 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-4 focus:ring-rose-100 font-bold cursor-pointer transition-all ${!endDate ? 'text-transparent' : 'text-rose-900'} focus:text-rose-900`}
                                 placeholder="ถึง"
                                 style={{ colorScheme: 'light' }}
                             />
-                            {!endDate && <span className="absolute left-10 top-1/2 -translate-y-1/2 text-rose-400 text-xs sm:text-sm font-bold pointer-events-none">ถึง</span>}
+                            {!endDate && <span className="absolute left-10 top-1/2 -translate-y-1/2 text-rose-400 text-xs sm:text-sm font-bold pointer-events-none group-focus-within:hidden">ถึง</span>}
                         </div>
                     </div>
 

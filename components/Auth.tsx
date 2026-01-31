@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { supabase, isMock } from '../services/supabaseClient';
+import { supabase } from '../services/supabaseClient';
 import Modal from './Modal';
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true); // Toggle between Login and Register
+  const [nickname, setNickname] = useState(''); // New state for Nickname
+  const [isLogin, setIsLogin] = useState(true); 
   
   // UI States
   const [errorMsg, setErrorMsg] = useState('');
@@ -25,33 +26,28 @@ const Auth = () => {
         });
         if (error) throw error;
       } else {
+        // Sign Up with Nickname (saved in user_metadata which triggers profile creation)
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              full_name: nickname.trim(), // Save nickname here
+              avatar_url: `https://api.dicebear.com/7.x/notionists/svg?seed=${nickname.trim()}&backgroundColor=e0e7ff` // Auto generate cute avatar
+            }
+          }
         });
         if (error) throw error;
-        setShowSuccessModal(true); // Show nice modal instead of alert
+        setShowSuccessModal(true); 
       }
     } catch (error: any) {
-      setErrorMsg(error.error_description || error.message || 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง');
+      let msg = error.message;
+      if (msg === 'Invalid login credentials') msg = 'อีเมลหรือรหัสผ่านผิดนะ ลองเช็คอีกที';
+      if (msg === 'User already registered') msg = 'อีเมลนี้มีคนใช้แล้วครับ';
+      
+      setErrorMsg(msg || 'อ้าว! เกิดข้อผิดพลาด ลองใหม่อีกทีนะ');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    setErrorMsg('');
-    try {
-        const { error } = await supabase.auth.signInWithPassword({
-            email: 'demo@smarttask.ai',
-            password: 'demo'
-        });
-        if (error) throw error;
-    } catch (error: any) {
-        setErrorMsg(error.message);
-    } finally {
-        setLoading(false);
     }
   };
 
@@ -70,13 +66,29 @@ const Auth = () => {
             </div>
             
             <h1 className="text-3xl font-extrabold text-slate-800 mb-2">
-                {isLogin ? 'ยินดีต้อนรับกลับ!' : 'มาเป็นชาวแก๊งกัน!'}
+                {isLogin ? 'ยินดีต้อนรับกลับ!' : 'มาเป็นเพื่อนกัน!'}
             </h1>
             <p className="text-slate-500 mb-8 font-medium">
-                {isLogin ? 'พร้อมลุยงานต่อยัง?' : 'จัดการชีวิตให้ปัง ด้วย SmartTask AI'}
+                {isLogin ? 'พร้อมลุยงานต่อหรือยัง?' : 'ให้ SmartTask ช่วยจัดการชีวิตให้นะ'}
             </p>
 
             <form onSubmit={handleAuth} className="space-y-4">
+            
+            {/* Nickname Input - Only show on Register */}
+            {!isLogin && (
+                <div className="text-left group animate-slide-up">
+                    <label className="text-xs font-bold text-slate-500 ml-1 mb-1 block uppercase tracking-wider">ชื่อเล่น (ให้เราเรียกเธอว่าอะไรดี?)</label>
+                    <input
+                    type="text"
+                    placeholder="เช่น น้องส้ม, พี่บอย"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-4 focus:ring-violet-100 focus:border-violet-400 transition-all font-medium text-lg"
+                    />
+                </div>
+            )}
+
             <div className="text-left group">
                 <label className="text-xs font-bold text-slate-500 ml-1 mb-1 block uppercase tracking-wider">อีเมล</label>
                 <input
@@ -132,41 +144,25 @@ const Auth = () => {
                     {isLogin ? 'สมัครเลย' : 'เข้าสู่ระบบ'}
                 </button>
             </div>
-
-            {isMock && (
-                <div className="mt-8 pt-6 border-t border-dashed border-indigo-200">
-                    <button
-                        type="button"
-                        onClick={handleDemoLogin}
-                        disabled={loading}
-                        className="w-full py-3 rounded-xl bg-indigo-50 text-indigo-700 font-bold text-base hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2 border border-indigo-100"
-                    >
-                        🚀 เข้าใช้แบบ Demo (ทดลองเล่น)
-                    </button>
-                    <p className="text-xs text-center text-slate-400 mt-2 font-medium">
-                        ระบบจำลอง (ข้อมูลจะเก็บในเครื่องนี้เท่านั้น)
-                    </p>
-                </div>
-            )}
         </div>
       </div>
     </div>
 
     {/* Success Modal */}
-    <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} title="🎉 สำเร็จ!">
+    <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} title="🎉 เย้! ยินดีต้อนรับ">
         <div className="text-center p-6">
             <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
-                ✉️
+                👋
             </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">ส่งอีเมลยืนยันแล้ว!</h3>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">ยินดีต้อนรับนะ {nickname}!</h3>
             <p className="text-slate-500">
-                เราได้ส่งลิงก์ยืนยันตัวตนไปที่อีเมลของคุณแล้ว<br/>รบกวนเช็คเมล (รวมถึง Junk Mail) หน่อยนะ
+                เราส่งอีเมลยืนยันตัวตนไปให้แล้ว<br/>รบกวนเช็คเมล (รวมถึง Junk Mail) หน่อยน้า
             </p>
             <button 
                 onClick={() => setShowSuccessModal(false)} 
                 className="mt-8 w-full py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-all"
             >
-                รับทราบ
+                โอเค รอเช็คเมลเลย
             </button>
         </div>
     </Modal>

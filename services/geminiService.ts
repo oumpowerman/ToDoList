@@ -1,10 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Priority, AIResponse } from "../types";
 
-const apiKey = process.env.API_KEY;
+// ⚠️ ใส่ Gemini API Key ตรงนี้ (เอาจาก aistudio.google.com)
+const apiKey = "YOUR_GEMINI_API_KEY_HERE";
 
-// Initialize conditionally
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+const ai = (apiKey && !apiKey.includes("YOUR_GEMINI")) ? new GoogleGenAI({ apiKey }) : null;
 
 export const generateTaskBreakdown = async (taskTitle: string): Promise<AIResponse | null> => {
   if (!ai) {
@@ -13,10 +13,9 @@ export const generateTaskBreakdown = async (taskTitle: string): Promise<AIRespon
   }
 
   try {
-    const model = "gemini-3-flash-preview";
+    const model = "gemini-2.0-flash"; // Updated to newer model if available or stick to stable
     const currentDate = new Date().toISOString();
     
-    // Enhanced Prompt for Thai Date/Time Parsing
     const prompt = `Current date and time is ${currentDate}. Analyze this task: "${taskTitle}".
     IMPORTANT: Respond in Thai Language (ภาษาไทย).
     
@@ -24,39 +23,23 @@ export const generateTaskBreakdown = async (taskTitle: string): Promise<AIRespon
     2. Suggest a priority (Low, Medium, High).
     3. Suggest 1-3 short tags.
     4. EXTRACT DATE & TIME: 
-       - If the user implies a time (e.g., "นัดคุณส้ม 11 โมง", "พรุ่งนี้บ่าย 2", "Meet at 10am"), convert it to an exact ISO 8601 date string.
-       - Logic: "11 โมง" means 11:00 AM. "บ่าย 2" means 14:00. "เย็น" implies around 17:00 or 18:00.
-       - If no date specified but time is given, assume Today (if time is in future) or Tomorrow.
+       - If the user implies a time (e.g., "นัดคุณส้ม 11 โมง", "พรุ่งนี้บ่าย 2"), convert it to an exact ISO 8601 date string.
+       - If no date specified but time is given, assume Today or Tomorrow.
        - If absolutely no time mentioned, return null for suggestedDueDate.
     `;
 
     const response = await ai.models.generateContent({
-      model: model,
+      model: 'gemini-2.0-flash',
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            subtasks: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "รายการงานย่อย ภาษาไทย"
-            },
-            suggestedPriority: {
-              type: Type.STRING,
-              enum: [Priority.LOW, Priority.MEDIUM, Priority.HIGH],
-              description: "ความสำคัญ"
-            },
-            suggestedTags: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "แท็กที่เกี่ยวข้อง"
-            },
-            suggestedDueDate: {
-              type: Type.STRING,
-              description: "ISO 8601 date string (e.g. 2023-12-31T14:00:00.000Z)"
-            }
+            subtasks: { type: Type.ARRAY, items: { type: Type.STRING } },
+            suggestedPriority: { type: Type.STRING, enum: [Priority.LOW, Priority.MEDIUM, Priority.HIGH] },
+            suggestedTags: { type: Type.ARRAY, items: { type: Type.STRING } },
+            suggestedDueDate: { type: Type.STRING }
           },
           required: ["subtasks", "suggestedPriority", "suggestedTags"]
         }

@@ -1,14 +1,6 @@
-// IMPORTANT: You must get a Client ID from Google Cloud Console
-// 1. Go to console.cloud.google.com
-// 2. Create Project > Enable "Google Drive API"
-// 3. Credentials > Create OAuth Client ID > Web Application
-// 4. Add "http://localhost:3000" (or your domain) to "Authorized JavaScript origins"
-
-// ------------------------------------------------------------------
-// 👇 1. ใส่ Google Client ID ของคุณในเครื่องหมายคำพูดข้างล่างนี้
-// ------------------------------------------------------------------
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'; 
-const API_KEY = process.env.GOOGLE_API_KEY || ''; // ไม่จำเป็นต้องใส่ก็ได้สำหรับการอัปโหลดไฟล์
+// ⚠️ ใส่ Google Client ID ตรงนี้ (เอาจาก Google Cloud Console)
+const CLIENT_ID = '771008704083-h53hm1a5vnlkl7gju6r6s13ch2ua4552.apps.googleusercontent.com'; 
+const API_KEY = ''; // Optional, usually strictly needed only for some read ops but Client ID handles Auth flow.
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient: any;
@@ -41,7 +33,7 @@ const loadGapi = () => {
     tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
         client_id: CLIENT_ID,
         scope: SCOPES,
-        callback: '', // defined later
+        callback: '', 
     });
     gisInited = true;
 };
@@ -51,8 +43,8 @@ export const uploadToDrive = async (file: File): Promise<string | null> => {
         await initGoogleDrive();
     }
 
-    if (CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
-        alert("⚠️ ยังไม่ได้ตั้งค่า Google Client ID ในโค้ด (ไฟล์ services/googleDriveService.ts)");
+    if (CLIENT_ID === '771008704083-h53hm1a5vnlkl7gju6r6s13ch2ua4552.apps.googleusercontent.com') {
+        alert("⚠️ ยังไม่ได้ใส่ Google Client ID ในไฟล์ services/googleDriveService.ts ครับ");
         return null;
     }
 
@@ -65,11 +57,10 @@ export const uploadToDrive = async (file: File): Promise<string | null> => {
             try {
                 const accessToken = resp.access_token;
                 
-                // 1. Upload File
                 const metadata = {
                     name: file.name,
                     mimeType: file.type,
-                    parents: ['root'] // Upload to root folder, or specify folder ID
+                    parents: ['root'] 
                 };
 
                 const form = new FormData();
@@ -85,20 +76,12 @@ export const uploadToDrive = async (file: File): Promise<string | null> => {
                 const fileData = await uploadRes.json();
                 const fileId = fileData.id;
 
-                // 2. Make Public (Anyone with link can view) - Required for <img> tag
                 await (window as any).gapi.client.drive.permissions.create({
                     fileId: fileId,
-                    resource: {
-                        role: 'reader',
-                        type: 'anyone',
-                    }
+                    resource: { role: 'reader', type: 'anyone' }
                 });
 
-                // 3. Get Web Content Link (Thumbnail Link is better for embedding)
-                // We construct a specific URL that forces image display
-                // Format: https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000
                 const publicUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
-                
                 resolve(publicUrl);
 
             } catch (err) {
@@ -107,7 +90,6 @@ export const uploadToDrive = async (file: File): Promise<string | null> => {
             }
         };
 
-        // Trigger Login Popup
         if ((window as any).gapi.client.getToken() === null) {
             tokenClient.requestAccessToken({prompt: 'consent'});
         } else {

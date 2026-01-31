@@ -3,29 +3,21 @@ import { Task, TaskStatus, Priority } from '../types';
 
 interface DashboardProps {
   tasks: Task[];
+  nickname?: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
+const Dashboard: React.FC<DashboardProps> = ({ tasks, nickname }) => {
+  const userName = nickname || 'เธอ';
+
   const stats = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === TaskStatus.DONE).length;
     const pending = total - completed;
     
-    // On-Time Calculation
-    const doneTasks = tasks.filter(t => t.status === TaskStatus.DONE);
-    const onTime = doneTasks.filter(t => {
-       if (!t.dueDate) return true; // No due date = on time
-       // Check if finished before due date (using last activity time or fallback to now if simplistic)
-       // For this simple version, we assume if it's done, and not overdue "now", it's okay. 
-       // Ideally we'd check the completion activity timestamp against due date.
-       return t.dueDate >= Date.now(); 
-    }).length;
-
     // Completion Rate
     const completionRate = total === 0 ? 0 : Math.round((completed / total) * 100);
     
     // Life Score Logic (0-100)
-    // Weight: 70% Completion Rate, 30% Priority Handling
     const highPriorityTotal = tasks.filter(t => t.priority === Priority.HIGH).length;
     const highPriorityDone = tasks.filter(t => t.priority === Priority.HIGH && t.status === TaskStatus.DONE).length;
     const highPriorityRate = highPriorityTotal === 0 ? 100 : (highPriorityDone / highPriorityTotal) * 100;
@@ -33,16 +25,16 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
     let score = Math.round((completionRate * 0.7) + (highPriorityRate * 0.3));
     if (total === 0) score = 100; // New user bonus
 
-    // Grade & Message
+    // Grade & Message - Personalized!
     let grade = 'F';
-    let message = 'เริ่มจัดระเบียบชีวิตกันเถอะ!';
+    let message = `เริ่มจัดระเบียบชีวิตกันเถอะ ${userName}!`;
     let gradient = 'from-slate-400 to-slate-600';
 
-    if (score >= 90) { grade = 'S'; message = 'สุดยอด! คุณคือเทพเจ้าแห่งความโปรดักทีฟ ⚡️'; gradient = 'from-yellow-400 to-orange-500'; }
-    else if (score >= 80) { grade = 'A'; message = 'ยอดเยี่ยม! มีระเบียบวินัยดีมาก 🌟'; gradient = 'from-emerald-400 to-teal-500'; }
-    else if (score >= 60) { grade = 'B'; message = 'ใช้ได้เลย! พยายามเก็บงานค้างอีกนิด 👍'; gradient = 'from-blue-400 to-indigo-500'; }
-    else if (score >= 40) { grade = 'C'; message = 'สู้หน่อย! งานเริ่มดินพอกหางหมูแล้วนะ 🐷'; gradient = 'from-orange-400 to-red-500'; }
-    else { grade = 'D'; message = 'วิกฤตแล้ว! รีบเคลียร์งานด่วน 🔥'; gradient = 'from-red-500 to-rose-700'; }
+    if (score >= 90) { grade = 'S'; message = `สุดยอด! ${userName} คือเทพเจ้าแห่งความโปรดักทีฟ ⚡️`; gradient = 'from-yellow-400 to-orange-500'; }
+    else if (score >= 80) { grade = 'A'; message = `เยี่ยมมาก ${userName}! วินัยดีแบบนี้อนาคตไกล 🌟`; gradient = 'from-emerald-400 to-teal-500'; }
+    else if (score >= 60) { grade = 'B'; message = `ใช้ได้เลยนะ ${userName}! เก็บงานค้างอีกนิดจะเป๊ะมาก 👍`; gradient = 'from-blue-400 to-indigo-500'; }
+    else if (score >= 40) { grade = 'C'; message = `สู้หน่อย ${userName}! งานเริ่มกองเป็นภูเขาแล้วนะ 🐷`; gradient = 'from-orange-400 to-red-500'; }
+    else { grade = 'D'; message = `วิกฤตแล้ว ${userName}! รีบเคลียร์งานด่วนก่อนไฟลนก้น 🔥`; gradient = 'from-red-500 to-rose-700'; }
 
     // Last 7 Days Activity
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -52,12 +44,12 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
         return d;
     });
 
+    const doneTasks = tasks.filter(t => t.status === TaskStatus.DONE);
     const activityData = last7Days.map(date => {
         const dateStr = date.toLocaleDateString('th-TH', { weekday: 'short' });
         const count = doneTasks.filter(t => {
-            // Find completion activity
             const doneLog = t.activities?.find(a => a.content.includes('Finished') || a.content.includes('เสร็จ'));
-            const finishTime = doneLog ? doneLog.createdAt : t.createdAt; // Fallback
+            const finishTime = doneLog ? doneLog.createdAt : t.createdAt; 
             const finishDate = new Date(finishTime);
             finishDate.setHours(0,0,0,0);
             return finishDate.getTime() === date.getTime();
@@ -71,14 +63,14 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
         activityData,
         highPriorityTotal, highPriorityDone
     };
-  }, [tasks]);
+  }, [tasks, userName]);
 
   if (tasks.length === 0) {
       return (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center animate-pop">
               <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mb-4 text-4xl">📊</div>
               <h2 className="text-xl font-bold text-slate-700">ยังไม่มีข้อมูลสถิติ</h2>
-              <p className="text-slate-500">เริ่มสร้างงานแรกของคุณเพื่อดูการวิเคราะห์ผลงาน</p>
+              <p className="text-slate-500">สร้างงานแรกของคุณ เพื่อให้เราช่วยวิเคราะห์นะ {userName}</p>
           </div>
       );
   }
@@ -105,7 +97,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks }) => {
                   </p>
               </div>
 
-              {/* Circular Progress (CSS only) */}
+              {/* Circular Progress */}
               <div className="relative w-28 h-28 flex-shrink-0">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                       <path className="text-black/10" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3" />
