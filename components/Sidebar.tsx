@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="bg-white/95 backdrop-blur-md md:h-screen md:sticky md:top-0 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col z-10 shadow-sm transition-all duration-300 ease-in-out flex-shrink-0 md:w-20 xl:w-72">
-      <div className="p-4 xl:p-6 flex-1 overflow-y-auto no-scrollbar flex flex-col items-center xl:items-stretch">
+      <div className="p-3 md:p-4 xl:p-6 flex-1 overflow-y-auto no-scrollbar flex flex-col items-center xl:items-stretch">
         
         {/* Logo */}
         <div className="hidden md:flex items-center gap-4 mb-8 group cursor-pointer justify-center xl:justify-start">
@@ -58,44 +58,45 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* --- VIEW SWITCHER (Adaptive) --- */}
-        <div className="flex flex-col gap-2 mb-6 md:mb-8 w-full">
-            <div className="flex flex-col xl:flex-row bg-slate-50 p-1.5 rounded-3xl border border-slate-100 gap-1 xl:gap-0">
+        {/* --- COMPACT VIEW SWITCHER --- */}
+        <div className="w-full mb-4 md:mb-8">
+            <div className="grid grid-cols-3 md:flex md:flex-col gap-1 bg-slate-50 p-1 rounded-2xl md:rounded-3xl border border-slate-100">
                 <button 
                     onClick={() => onChangeView('tasks')}
                     title="งานของฉัน"
-                    className={`flex-1 py-2.5 xl:py-3 rounded-2xl text-sm xl:text-base font-bold flex items-center justify-center gap-2 transition-all duration-300
+                    className={`flex items-center justify-center md:justify-center xl:justify-start gap-1.5 md:gap-3 py-2 md:py-3 px-2 md:px-0 xl:px-4 rounded-xl md:rounded-2xl transition-all duration-300
                         ${currentView === 'tasks' 
-                            ? 'bg-violet-100 text-violet-700 shadow-sm ring-2 ring-violet-200 transform scale-[1.02]' 
-                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                            ? 'bg-white text-violet-700 shadow-sm ring-1 ring-slate-200 font-bold' 
+                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100/50 font-medium'}`}
                 >
-                    <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                    <span className="hidden xl:inline">งาน</span>
+                    <svg className={`w-5 h-5 flex-shrink-0 ${currentView === 'tasks' ? 'text-violet-500' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                    <span className="text-xs md:text-sm xl:text-base md:hidden xl:inline">งาน</span>
                 </button>
+                
                 <button 
                     onClick={() => onChangeView('dashboard')}
                     title="ภาพรวม"
-                    className={`flex-1 py-2.5 xl:py-3 rounded-2xl text-sm xl:text-base font-bold flex items-center justify-center gap-2 transition-all duration-300
+                    className={`flex items-center justify-center md:justify-center xl:justify-start gap-1.5 md:gap-3 py-2 md:py-3 px-2 md:px-0 xl:px-4 rounded-xl md:rounded-2xl transition-all duration-300
                         ${currentView === 'dashboard' 
-                            ? 'bg-orange-100 text-orange-700 shadow-sm ring-2 ring-orange-200 transform scale-[1.02]' 
-                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+                            ? 'bg-white text-orange-700 shadow-sm ring-1 ring-slate-200 font-bold' 
+                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100/50 font-medium'}`}
                 >
-                    <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
-                    <span className="hidden xl:inline">ภาพรวม</span>
+                    <svg className={`w-5 h-5 flex-shrink-0 ${currentView === 'dashboard' ? 'text-orange-500' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
+                    <span className="text-xs md:text-sm xl:text-base md:hidden xl:inline">ภาพรวม</span>
+                </button>
+
+                <button 
+                    onClick={() => onChangeView('diary')}
+                    title="ไดอารี่"
+                    className={`flex items-center justify-center md:justify-center xl:justify-start gap-1.5 md:gap-3 py-2 md:py-3 px-2 md:px-0 xl:px-4 rounded-xl md:rounded-2xl transition-all duration-300
+                        ${currentView === 'diary' 
+                            ? 'bg-white text-amber-800 shadow-sm ring-1 ring-slate-200 font-bold' 
+                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100/50 font-medium'}`}
+                >
+                    <span className="text-lg leading-none md:text-xl">📒</span>
+                    <span className="text-xs md:text-sm xl:text-base md:hidden xl:inline">ไดอารี่</span>
                 </button>
             </div>
-            
-            <button 
-                onClick={() => onChangeView('diary')}
-                title="ไดอารี่"
-                className={`w-full py-2.5 xl:py-3 rounded-3xl text-sm xl:text-base font-bold flex items-center justify-center gap-2 transition-all duration-300 border
-                    ${currentView === 'diary' 
-                        ? 'bg-amber-100 text-amber-800 border-amber-200 shadow-sm ring-2 ring-amber-100' 
-                        : 'bg-white border-slate-100 text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
-            >
-                <span className="text-xl">📒</span>
-                <span className="hidden xl:inline">ไดอารี่</span>
-            </button>
         </div>
 
         {/* Progress Card - Show only on XL Desktop */}
@@ -127,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     key={item.label}
                     onClick={() => setFilter(item.value as any)}
                     title={item.label}
-                    className={`snap-start flex items-center justify-center xl:justify-start gap-2 md:gap-4 px-4 xl:px-5 py-3 xl:py-4 rounded-full md:rounded-2xl text-sm md:text-base font-bold transition-all duration-200 whitespace-nowrap relative overflow-hidden flex-shrink-0 border md:border-0 w-full
+                    className={`snap-start flex items-center justify-center xl:justify-start gap-2 md:gap-4 px-4 xl:px-5 py-2.5 md:py-3 xl:py-4 rounded-full md:rounded-2xl text-sm md:text-base font-bold transition-all duration-200 whitespace-nowrap relative overflow-hidden flex-shrink-0 border md:border-0 w-full
                     ${isActive 
                         ? 'bg-slate-900 text-white border-slate-900 shadow-lg transform scale-105 md:bg-indigo-50 md:text-indigo-800 md:shadow-none md:scale-100 md:border-transparent' 
                         : 'text-slate-600 bg-white border-slate-300 hover:bg-slate-100'}`}
@@ -142,14 +143,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 );
             })}
             
-            <div className="w-px bg-slate-300 mx-1 md:hidden h-10 self-center"></div>
+            <div className="w-px bg-slate-300 mx-1 md:hidden h-8 self-center"></div>
 
             {/* Mobile/Tablet Category Pills */}
             {categories.map(cat => (
                     <button
                         key={cat.id}
                         onClick={() => setFilter(cat.id)}
-                        className={`md:hidden snap-start flex items-center gap-2 px-4 py-3 rounded-full text-sm font-bold border transition-all whitespace-nowrap
+                        className={`md:hidden snap-start flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold border transition-all whitespace-nowrap
                             ${filter === cat.id 
                                 ? `bg-${cat.color}-600 text-white border-${cat.color}-600 shadow-md` 
                                 : `bg-white text-slate-600 border-slate-300 hover:bg-slate-50`}`}
@@ -158,8 +159,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <span>{cat.name}</span>
                     </button>
                 ))}
-                <button onClick={onOpenSettings} className="snap-start flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-slate-400 text-slate-500 hover:border-violet-500 hover:text-violet-600 md:hidden flex-shrink-0">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                <button onClick={onOpenSettings} className="snap-start flex items-center justify-center w-9 h-9 rounded-full border-2 border-dashed border-slate-400 text-slate-500 hover:border-violet-500 hover:text-violet-600 md:hidden flex-shrink-0">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 </button>
             </nav>
         )}
