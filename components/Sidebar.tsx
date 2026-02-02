@@ -24,19 +24,19 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const mainMenuItems = [
     { 
-      label: 'งานทั้งหมด', 
+      label: 'ทั้งหมด', 
       value: 'All', 
       icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />,
       color: "text-purple-600 bg-purple-100"
     },
     { 
-      label: 'รอสะสาง', 
+      label: 'รอทำ', 
       value: TaskStatus.TODO, 
       icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />,
       color: "text-blue-600 bg-blue-100"
     },
     { 
-      label: 'เสร็จสิ้น', 
+      label: 'เสร็จ', 
       value: TaskStatus.DONE, 
       icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
       color: "text-green-600 bg-green-100"
@@ -118,51 +118,56 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
         )}
 
-        {/* Mobile Filter Scroll - Show only on Tasks View */}
+        {/* Mobile Filter Grid - Improved Design */}
         {currentView === 'tasks' && (
-            <nav className="flex gap-2 md:flex-col overflow-x-auto no-scrollbar pb-1 snap-x snap-mandatory md:pb-0 mb-4 md:mb-6 w-full md:items-center xl:items-stretch">
-            {mainMenuItems.map((item) => {
-                const isActive = filter === item.value;
-                return (
-                <button
-                    key={item.label}
-                    onClick={() => setFilter(item.value as any)}
-                    title={item.label}
-                    className={`snap-start flex items-center justify-center xl:justify-start gap-2 md:gap-4 px-4 xl:px-5 py-2.5 md:py-3 xl:py-4 rounded-full md:rounded-2xl text-sm md:text-base font-bold transition-all duration-200 whitespace-nowrap relative overflow-hidden flex-shrink-0 border md:border-0 w-full
-                    ${isActive 
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-lg transform scale-105 md:bg-indigo-50 md:text-indigo-800 md:shadow-none md:scale-100 md:border-transparent' 
-                        : 'text-slate-600 bg-white border-slate-300 hover:bg-slate-100'}`}
-                >
-                    <div className={`hidden md:flex w-8 h-8 rounded-xl items-center justify-center transition-all ${isActive ? 'bg-white shadow-sm' : item.color.replace('text-', 'bg-').replace('600', '100') + ' opacity-100'}`}>
-                        <svg className={`w-5 h-5 ${isActive ? 'text-indigo-700' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        {item.icon}
-                        </svg>
-                    </div>
-                    <span className="relative z-10 md:hidden xl:inline">{item.label}</span>
-                </button>
-                );
-            })}
-            
-            <div className="w-px bg-slate-300 mx-1 md:hidden h-8 self-center"></div>
+            <div className="md:hidden w-full mb-2">
+                 {/* 1. Main Status Tabs (Grid Layout - No Scroll) */}
+                 <div className="bg-slate-100/80 p-1 rounded-xl grid grid-cols-3 gap-1 mb-2">
+                    {mainMenuItems.map((item) => {
+                        const isActive = filter === item.value;
+                        return (
+                        <button
+                            key={item.label}
+                            onClick={() => setFilter(item.value as any)}
+                            title={item.label}
+                            className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all
+                            ${isActive 
+                                ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-black/5' 
+                                : 'text-slate-500 hover:bg-white/50'}`}
+                        >
+                            <svg className={`w-4 h-4 ${isActive ? 'text-indigo-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                {item.icon}
+                            </svg>
+                            <span>{item.label}</span>
+                        </button>
+                        );
+                    })}
+                </div>
 
-            {/* Mobile/Tablet Category Pills */}
-            {categories.map(cat => (
-                    <button
-                        key={cat.id}
-                        onClick={() => setFilter(cat.id)}
-                        className={`md:hidden snap-start flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold border transition-all whitespace-nowrap
-                            ${filter === cat.id 
-                                ? `bg-${cat.color}-600 text-white border-${cat.color}-600 shadow-md` 
-                                : `bg-white text-slate-600 border-slate-300 hover:bg-slate-50`}`}
-                    >
-                        <div className={`w-3 h-3 rounded-full ${filter === cat.id ? 'bg-white' : `bg-${cat.color}-500`}`}></div>
-                        <span>{cat.name}</span>
+                {/* 2. Categories (Compact Scrollable Row) */}
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 items-center">
+                     {/* Settings Button */}
+                    <button onClick={onOpenSettings} className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 border border-slate-200 text-slate-400 hover:text-violet-600 hover:border-violet-300 transition-colors">
+                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                     </button>
-                ))}
-                <button onClick={onOpenSettings} className="snap-start flex items-center justify-center w-9 h-9 rounded-full border-2 border-dashed border-slate-400 text-slate-500 hover:border-violet-500 hover:text-violet-600 md:hidden flex-shrink-0">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                </button>
-            </nav>
+                    <div className="w-px h-5 bg-slate-200 flex-shrink-0 mx-0.5"></div>
+                    
+                    {categories.map(cat => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setFilter(cat.id)}
+                            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap
+                                ${filter === cat.id 
+                                    ? `bg-${cat.color}-500 text-white border-${cat.color}-600 shadow-sm` 
+                                    : `bg-white text-slate-600 border-slate-200 hover:bg-slate-50`}`}
+                        >
+                            <div className={`w-2 h-2 rounded-full ${filter === cat.id ? 'bg-white' : `bg-${cat.color}-500`}`}></div>
+                            <span>{cat.name}</span>
+                        </button>
+                    ))}
+                    {categories.length === 0 && <span className="text-xs text-slate-400 pl-2">ยังไม่มีหมวดหมู่</span>}
+                </div>
+            </div>
         )}
 
         {/* Categories Section Desktop */}
@@ -174,6 +179,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </button>
             </div>
             <div className="space-y-1 mb-auto flex flex-col items-center xl:items-stretch">
+                <button
+                    onClick={() => {
+                        onChangeView('tasks');
+                        setFilter('All');
+                    }}
+                    title="งานทั้งหมด"
+                    className={`md:hidden xl:hidden w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all mb-2
+                        ${filter === 'All' && currentView === 'tasks' ? 'bg-purple-100 text-purple-900 font-bold' : 'text-slate-600 hover:bg-slate-100'}`}
+                >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                </button>
+
                 {categories.map(cat => (
                     <button
                         key={cat.id}

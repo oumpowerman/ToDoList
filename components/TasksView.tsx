@@ -60,15 +60,6 @@ const TasksView: React.FC<TasksViewProps> = ({
   }, [tasks]);
 
   const handleFocusUrgent = () => {
-      // Auto-set filters to show urgent tasks
-      // Note: Ideally this would set a specific filter, but for now we reset search to help visibility
-      // or we could scroll to top. 
-      // User Persona: "Lazy" -> just show me what to do.
-      // Since we don't have a specific "Urgent" filter in props, we can set priority or date.
-      // For this implementation, we will assume the user clicks the individual items in the banner logic (if expanded)
-      // OR we visually highlight them.
-      
-      // Let's set the Start Date filter to Today to filter list (Approximate solution for lazy filter)
       const todayStr = new Date().toISOString().split('T')[0];
       filters.setEndDate(todayStr); // Filter up to today
       onShowAlert(`🔥 กรองให้เฉพาะงานที่ต้องเคลียร์ภายในวันนี้แล้วนะ!`);
@@ -116,7 +107,7 @@ const TasksView: React.FC<TasksViewProps> = ({
           />
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-10 pr-1">
+      <div className="pb-4">
       {loading && tasks.length === 0 ? (
           <div className="flex justify-center items-center h-40">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
