@@ -36,17 +36,9 @@ const DiaryView = ({ session }: { session: any }) => {
   const handleAddImage = (url: string) => setImages([...images, url]);
   const handleRemoveImage = (index: number) => setImages(images.filter((_, i) => i !== index));
 
-  return (
-    <div className="h-full flex flex-col md:flex-row gap-6 p-1 md:p-0 transition-all duration-500">
-      
-      {/* Left Column: Controls */}
-      <div className={`
-          flex flex-col gap-3 transition-all duration-500 ease-in-out overflow-y-auto no-scrollbar
-          ${isFocusMode ? 'w-0 opacity-0 -translate-x-full absolute' : 'w-full md:w-[280px] opacity-100 translate-x-0 flex-shrink-0'}
-      `}>
-        <DiaryDateNav date={currentDate} onChangeDate={handleChangeDate} isEditable={isEditable} />
-        
-        {/* Accordion: Mood */}
+  const SettingsContent = () => (
+      <>
+         {/* Accordion: Mood */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden transition-all duration-300">
             <button 
                 onClick={() => toggleAccordion('mood')}
@@ -85,13 +77,32 @@ const DiaryView = ({ session }: { session: any }) => {
                  </div>
             </div>
         </div>
+      </>
+  );
 
-        {/* Save Button - Push to bottom on desktop, sticking naturally */}
+  return (
+    <div className="h-full flex flex-col md:flex-row gap-6 p-1 md:p-0 transition-all duration-500">
+      
+      {/* 1. Mobile Only: Date Nav (Top) */}
+      <div className="md:hidden flex-shrink-0">
+         <DiaryDateNav date={currentDate} onChangeDate={handleChangeDate} isEditable={isEditable} />
+      </div>
+
+      {/* 2. Desktop Left Column: Controls */}
+      <div className={`
+          hidden md:flex flex-col gap-3 transition-all duration-500 ease-in-out overflow-y-auto no-scrollbar
+          ${isFocusMode ? 'w-0 opacity-0 -translate-x-full absolute' : 'w-[280px] opacity-100 translate-x-0 flex-shrink-0'}
+      `}>
+        <DiaryDateNav date={currentDate} onChangeDate={handleChangeDate} isEditable={isEditable} />
+        
+        <SettingsContent />
+
+        {/* Desktop Save Button */}
         <div className="mt-auto pt-4">
              <button 
                 onClick={saveDiary}
                 disabled={!isEditable || saving}
-                className={`hidden md:flex w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all items-center justify-center gap-2
+                className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-2
                     ${isEditable 
                         ? 'bg-slate-900 text-white hover:bg-slate-800 hover:scale-[1.02] active:scale-95' 
                         : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
@@ -101,7 +112,7 @@ const DiaryView = ({ session }: { session: any }) => {
         </div>
       </div>
 
-      {/* Right Column: Paper & Content */}
+      {/* 3. Paper & Content (Middle) */}
       <div 
         key={currentDate.toISOString()}
         className={`flex-1 flex flex-col transition-all duration-500 min-w-0 ${isFocusMode ? 'w-full' : ''}`}
@@ -132,8 +143,13 @@ const DiaryView = ({ session }: { session: any }) => {
             />
           </DiaryPaper>
       </div>
+
+      {/* 4. Mobile Only: Settings (Bottom) */}
+      <div className="md:hidden flex flex-col gap-3 flex-shrink-0 pb-16">
+          <SettingsContent />
+      </div>
       
-      {/* Mobile Save Button */}
+      {/* 5. Mobile Save Button (Fixed Bottom) */}
       {!isFocusMode && (
         <div className="md:hidden sticky bottom-4 z-40">
             <button 

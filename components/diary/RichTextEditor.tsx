@@ -173,19 +173,19 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     {activeTab === 'paragraph' && (
                         <div className="flex items-center gap-2 animate-pop">
                             <button onClick={() => execCommand('insertUnorderedList')} className={btnClass} title="รายการแบบจุด">
-                                <svg className={iconClass} fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /><circle cx="2" cy="6" r="1" fill="currentColor"/><circle cx="2" cy="12" r="1" fill="currentColor"/><circle cx="2" cy="18" r="1" fill="currentColor"/></svg>
+                                <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /><circle cx="2" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="2" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="2" cy="18" r="1" fill="currentColor" stroke="none"/></svg>
                             </button>
                             <button onClick={() => execCommand('insertOrderedList')} className={btnClass} title="รายการแบบตัวเลข">
-                                <svg className={iconClass} fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 6h11M9 12h11M9 18h11M4 6h1v4m-1 0h2m0 8h.01M4 18h.01" /></svg>
+                                <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 6h11M9 12h11M9 18h11M4 6h1v4m-1 0h2m0 8h.01M4 18h.01" /></svg>
                             </button>
                             
                             <div className="w-px h-8 bg-slate-300 mx-1"></div>
 
                             <button onClick={() => execCommand('outdent')} className={btnClass} title="ลดย่อหน้า">
-                                <svg className={iconClass} fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+                                <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
                             </button>
                             <button onClick={() => execCommand('indent')} className={btnClass} title="เพิ่มย่อหน้า">
-                                <svg className={iconClass} fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                                <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
                             </button>
                         </div>
                     )}

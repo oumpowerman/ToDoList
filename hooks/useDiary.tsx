@@ -31,14 +31,15 @@ export const useDiary = (session: Session | null) => {
     setLoading(true);
     const dateKey = formatDateKey(currentDate);
 
+    // Use maybeSingle() instead of single() to avoid PGRST116 error when no row exists
     const { data, error } = await supabase
       .from('diaries')
       .select('*')
       .eq('user_id', session.user.id)
       .eq('date', dateKey)
-      .single();
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
        console.error('Error fetching diary:', error);
     }
 

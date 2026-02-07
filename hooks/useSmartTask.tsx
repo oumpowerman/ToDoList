@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import { Task, Category, TaskStatus, Priority } from '../types';
+import { NotificationService } from '../services/notificationService';
+import { Capacitor } from '@capacitor/core';
 
 const PAGE_SIZE = 20;
 
@@ -29,64 +31,19 @@ export const useSmartTask = () => {
   // Notification State
   const [notifiedTasks, setNotifiedTasks] = useState<Set<string>>(new Set());
 
-  // --- Auth & Init ---
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-          fetchProfile(session.user.id);
-          fetchCategories(session.user.id);
-          fetchTasks(false); 
-      } else {
-          setLoading(false);
-      }
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) { 
-          setTasks([]); 
-          setCategories([]); 
-          setProfile(null);
-      } else { 
-          fetchProfile(session.user.id);
-          fetchCategories(session.user.id); 
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  // --- Data Fetching Functions (Defined first to be used in Effect) ---
 
   const fetchProfile = async (userId: string) => {
-      const { data } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', userId).single();
+      // Use maybeSingle() to avoid error if profile triggers haven't run yet or failed
+      const { data } = await supabase.from('profiles').select('full_name, avatar_url').eq('id', userId).maybeSingle();
       if (data) setProfile(data);
   };
 
-  // --- Notification System ---
-  useEffect(() => {
-      if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-          Notification.requestPermission();
-      }
-      const interval = setInterval(() => {
-          if (Notification.permission !== 'granted') return;
-          const now = Date.now();
-          tasks.forEach(task => {
-              if (task.status === TaskStatus.DONE || !task.dueDate) return;
-              if (notifiedTasks.has(task.id)) return;
-              const timeLeft = task.dueDate - now;
-              if (timeLeft > 0 && timeLeft <= 60 * 60 * 1000) {
-                  // Personalize notification
-                  const name = profile?.full_name ? `คุณ${profile.full_name}` : 'เธอ';
-                  new Notification(`⏰ ${name}! ใกล้ถึงเวลานัดแล้ว`, {
-                      body: `${task.title} ในอีก ${Math.ceil(timeLeft / 60000)} นาทีนะ`,
-                      icon: '/favicon.ico'
-                  });
-                  setNotifiedTasks(prev => new Set(prev).add(task.id));
-              }
-          });
-      }, 60000); 
-      return () => clearInterval(interval);
-  }, [tasks, notifiedTasks, profile]);
+  const fetchCategories = async (userId: string) => {
+    const { data, error } = await supabase.from('categories').select('*').eq('user_id', userId); 
+    if (!error && data) setCategories(data);
+  };
 
-  // --- Data Fetching ---
   const fetchTasks = useCallback(async (isLoadMore = false) => {
     const { data: { session: currentSession } } = await supabase.auth.getSession();
     if (!currentSession?.user) return;
@@ -105,7 +62,6 @@ export const useSmartTask = () => {
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    // Apply Filters
     if (sidebarFilter !== 'All') {
         if (Object.values(TaskStatus).includes(sidebarFilter as TaskStatus)) {
             if (sidebarFilter === TaskStatus.TODO) query = query.neq('status', TaskStatus.DONE); 
@@ -116,10 +72,8 @@ export const useSmartTask = () => {
     }
     if (search) query = query.ilike('title', `%${search}%`); 
     if (priorityFilter !== 'All') query = query.eq('priority', priorityFilter);
-    
-    // FIX: Filter by Due Date instead of Created Date for better UX
     if (startDate) query = query.gte('due_date', new Date(startDate).getTime());
-    if (endDate) query = query.lte('due_date', new Date(endDate).getTime() + 86400000); // +1 Day to include the end date fully
+    if (endDate) query = query.lte('due_date', new Date(endDate).getTime() + 86400000); 
 
     const { data, error } = await query;
 
@@ -149,23 +103,104 @@ export const useSmartTask = () => {
             setPage(0);
         }
         setHasMore(mappedTasks.length === PAGE_SIZE);
+        
+        // Re-schedule notifications for existing tasks on native (in case of restart)
+        if (Capacitor.isNativePlatform() && !isLoadMore) {
+             mappedTasks.forEach(t => {
+                 if(t.status !== TaskStatus.DONE && t.dueDate && t.dueDate > Date.now()) {
+                     NotificationService.schedule(t);
+                 }
+             });
+        }
     }
     setLoading(false);
     setIsLoadingMore(false);
   }, [sidebarFilter, search, priorityFilter, startDate, endDate, page]);
 
-  // Trigger Fetch when Filters Change
-  useEffect(() => { fetchTasks(false); }, [sidebarFilter, search, priorityFilter, startDate, endDate]);
+  // --- Auth & Init Effect ---
+  useEffect(() => {
+    // 1. Initial Check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+          fetchProfile(session.user.id);
+          fetchCategories(session.user.id);
+          // Don't need to call fetchTasks here if we rely on the filter-effect below?
+          // BUT the filter-effect might run before session is set if we don't depend on session.
+          // Since fetchTasks gets session internally, we should call it.
+          fetchTasks(false); 
+      } else {
+          setLoading(false);
+      }
+    });
 
-  const fetchCategories = async (userId: string) => {
-    const { data, error } = await supabase.from('categories').select('*').eq('user_id', userId); 
-    if (!error && data) setCategories(data);
-  };
+    // 2. Auth State Listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (!session) { 
+          setTasks([]); 
+          setCategories([]); 
+          setProfile(null);
+      } else { 
+          fetchProfile(session.user.id);
+          fetchCategories(session.user.id); 
+          // IMPORTANT: Trigger fetchTasks when user logs in
+          // This ensures tasks load immediately even if filters haven't changed
+          fetchTasks(false);
+      }
+    });
+    
+    // Request Notification Permissions on Mount
+    NotificationService.requestPermissions();
+
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
+
+  // --- Filter Change Effect ---
+  // Trigger fetch whenever filters change
+  useEffect(() => { 
+      // Only fetch if we have a session (optimization, though fetchTasks checks too)
+      // We don't check session state here to avoid dependency cycles, fetchTasks handles it.
+      fetchTasks(false); 
+  }, [sidebarFilter, search, priorityFilter, startDate, endDate, fetchTasks]);
+
+  // --- Web Notification Polling (Fallback for non-mobile) ---
+  useEffect(() => {
+      if (Capacitor.isNativePlatform()) return;
+
+      if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+          Notification.requestPermission();
+      }
+      const interval = setInterval(() => {
+          if (Notification.permission !== 'granted') return;
+          const now = Date.now();
+          tasks.forEach(task => {
+              if (task.status === TaskStatus.DONE || !task.dueDate) return;
+              if (notifiedTasks.has(task.id)) return;
+              const timeLeft = task.dueDate - now;
+              // Alert 1 hour before
+              if (timeLeft > 0 && timeLeft <= 60 * 60 * 1000) {
+                  const name = profile?.full_name ? `คุณ${profile.full_name}` : 'เธอ';
+                  new Notification(`⏰ ${name}! ใกล้ถึงเวลานัดแล้ว`, {
+                      body: `${task.title} ในอีก ${Math.ceil(timeLeft / 60000)} นาทีนะ`,
+                      icon: '/favicon.ico'
+                  });
+                  setNotifiedTasks(prev => new Set(prev).add(task.id));
+              }
+          });
+      }, 60000); 
+      return () => clearInterval(interval);
+  }, [tasks, notifiedTasks, profile]);
 
   // --- Actions ---
   const addTask = async (task: Task) => {
     if (!session?.user) return;
     setTasks(prev => [task, ...prev]);
+    
+    // Schedule Notification
+    await NotificationService.schedule(task);
+
     const { error } = await supabase.from('tasks').insert({
       id: task.id, user_id: session.user.id, title: task.title, description: task.description,
       priority: task.priority, status: task.status, created_at: task.createdAt, due_date: task.dueDate,
@@ -176,6 +211,14 @@ export const useSmartTask = () => {
 
   const updateTask = async (updatedTask: Task) => {
     setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+
+    // Handle Notification Logic
+    if (updatedTask.status === TaskStatus.DONE) {
+        await NotificationService.cancel(updatedTask.id);
+    } else {
+        await NotificationService.schedule(updatedTask);
+    }
+
     const { error } = await supabase.from('tasks').update({
         title: updatedTask.title, description: updatedTask.description, priority: updatedTask.priority,
         status: updatedTask.status, due_date: updatedTask.dueDate, subtasks: updatedTask.subtasks,
@@ -186,6 +229,10 @@ export const useSmartTask = () => {
 
   const deleteTask = async (id: string) => {
     setTasks(prev => prev.filter(t => t.id !== id));
+    
+    // Cancel Notification
+    await NotificationService.cancel(id);
+
     await supabase.from('tasks').delete().eq('id', id);
   };
 
@@ -205,6 +252,11 @@ export const useSmartTask = () => {
 
   const clearCompleted = async () => {
     if (!session?.user) return;
+    
+    // Cleanup notifications for tasks being removed
+    const completedTasks = tasks.filter(t => t.status === TaskStatus.DONE);
+    completedTasks.forEach(t => NotificationService.cancel(t.id));
+
     setTasks(prev => prev.filter(t => t.status !== TaskStatus.DONE));
     await supabase.from('tasks').delete().eq('status', TaskStatus.DONE).eq('user_id', session.user.id);
     setTimeout(() => fetchTasks(false), 500);

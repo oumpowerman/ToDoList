@@ -139,23 +139,23 @@ function App() {
                 <div className="animate-pop">
                     {currentView === 'tasks' ? (
                         <>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2 truncate">
+                            <h2 className="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2 truncate">
                                 {currentCategoryName ? <><span className="text-slate-400">📂</span>{currentCategoryName}</> : 
                                 filters.sidebarFilter === TaskStatus.TODO ? `👋 หวัดดี ${userName}! ลุยงานกัน` : filters.sidebarFilter === TaskStatus.DONE ? "🏆 ทำดีมาก! นี่คือผลงานเธอ" : `📝 งานทั้งหมดของ ${userName}`}
                             </h2>
-                            <p className="text-slate-500 font-medium text-sm mt-1">
+                            <p className="text-slate-500 font-medium text-xs md:text-sm mt-1">
                                 มี {tasks.length} รายการในหน้านี้นะ
                             </p>
                         </>
                     ) : currentView === 'dashboard' ? (
                         <>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">📊 สรุปชีวิตของ {userName}</h2>
-                            <p className="text-slate-500 font-medium text-sm mt-1">มาดูความเทพของเธอกัน</p>
+                            <h2 className="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight">📊 สรุปชีวิตของ {userName}</h2>
+                            <p className="text-slate-500 font-medium text-xs md:text-sm mt-1">มาดูความเทพของเธอกัน</p>
                         </>
                     ) : (
                         <>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">📒 ไดอารี่ของ {userName}</h2>
-                            <p className="text-slate-500 font-medium text-sm mt-1">เก็บความทรงจำดีๆ ไว้นะ</p>
+                            <h2 className="text-xl md:text-2xl font-extrabold text-slate-800 tracking-tight">📒 ไดอารี่ของ {userName}</h2>
+                            <p className="text-slate-500 font-medium text-xs md:text-sm mt-1">เก็บความทรงจำดีๆ ไว้นะ</p>
                         </>
                     )}
                 </div>

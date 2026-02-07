@@ -24,9 +24,9 @@ const DiaryPaper: React.FC<DiaryPaperProps> = ({
     
     // --- Theme & Realistic Textures Logic ---
     const getStyles = () => {
-        const lineHeight = '36px'; 
-        const fontSize = '1.125rem'; 
-        const paddingTop = '6px'; 
+        const lineHeight = '32px'; 
+        const fontSize = '1rem'; 
+        const paddingTop = '4px'; 
 
         // Theme Base Colors
         const t = {
@@ -46,21 +46,21 @@ const DiaryPaper: React.FC<DiaryPaperProps> = ({
 
         // Pattern Logic (for Editor Background)
         let patternBg = 'none';
-        let patternSize = '100% 36px';
+        let patternSize = '100% 32px';
         let patternPos = '0 0';
 
         switch (pattern) {
             case 'lines':
-                patternBg = `linear-gradient(transparent 35px, ${t.line} 35px)`;
+                patternBg = `linear-gradient(transparent 31px, ${t.line} 31px)`;
                 break;
             case 'grid':
-                patternBg = `linear-gradient(transparent 35px, ${t.line} 35px), linear-gradient(90deg, transparent 35px, ${t.line} 35px)`;
-                patternSize = '36px 36px';
+                patternBg = `linear-gradient(transparent 31px, ${t.line} 31px), linear-gradient(90deg, transparent 31px, ${t.line} 31px)`;
+                patternSize = '32px 32px';
                 patternPos = '0 -1px';
                 break;
             case 'dots':
                 patternBg = `radial-gradient(${t.line} 1.5px, transparent 1.5px)`;
-                patternSize = '36px 36px';
+                patternSize = '32px 32px';
                 break;
             default: patternBg = 'none';
         }
@@ -118,7 +118,7 @@ const DiaryPaper: React.FC<DiaryPaperProps> = ({
 
             {/* Header / Actions - Absolute Positioned on top of editor */}
             <div className="absolute top-4 right-4 md:right-8 z-40 flex items-center gap-2">
-                <span className="text-2xl filter drop-shadow-sm hover:scale-110 transition-transform cursor-pointer" title="Mood">{mood}</span>
+                <span className="text-xl filter drop-shadow-sm hover:scale-110 transition-transform cursor-pointer" title="Mood">{mood}</span>
                 <button 
                     onClick={toggleFocusMode}
                     className={`p-1.5 rounded-lg transition-all shadow-sm border ${isFocusMode ? 'bg-slate-800 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:text-indigo-600'}`}
@@ -132,7 +132,7 @@ const DiaryPaper: React.FC<DiaryPaperProps> = ({
             </div>
 
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar px-6 md:px-14 py-8 relative z-10">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar px-6 md:px-14 py-6 relative z-10">
                 
                 {/* Title */}
                 <div className="mb-2 border-b-2 pb-2 mt-8 md:mt-2" style={{ borderColor: styles.borderColor }}>
@@ -143,12 +143,12 @@ const DiaryPaper: React.FC<DiaryPaperProps> = ({
                         placeholder={isEditable ? "หัวข้อวันนี้..." : "ไม่มีหัวข้อ"}
                         readOnly={!isEditable}
                         style={{ color: styles.color }}
-                        className="w-full bg-transparent text-2xl md:text-3xl font-bold placeholder:opacity-40 focus:outline-none font-sans tracking-tight"
+                        className="w-full bg-transparent text-xl md:text-2xl font-bold placeholder:opacity-40 focus:outline-none font-sans tracking-tight"
                      />
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-amber-400"></div></div>
+                    <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-400"></div></div>
                 ) : (
                     <RichTextEditor 
                         content={content}

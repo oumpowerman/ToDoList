@@ -67,7 +67,7 @@ const TasksView: React.FC<TasksViewProps> = ({
 
   return (
     <>
-      <div className="sticky top-0 z-40 -mx-4 px-4 pt-1 bg-indigo-50/95 backdrop-blur-md transition-all">
+      <div className="-mx-4 px-4 pt-1 transition-all">
           <AddTask onAdd={actions.addTask} categories={categories} onShowAlert={onShowAlert} />
           
           {/* --- SMART FOCUS BANNER --- */}
