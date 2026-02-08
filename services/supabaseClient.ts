@@ -1,12 +1,33 @@
 import { createClient } from '@supabase/supabase-js';
+import { Preferences } from '@capacitor/preferences';
 
 // ⚠️ ใส่ Supabase URL และ Anon Key ของคุณตรงนี้ (เอาจาก Supabase Dashboard > Settings > API)
 const supabaseUrl = "https://hljolqwmpjgeyvdrpkec.supabase.co"; 
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsam9scXdtcGpnZXl2ZHJwa2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3ODQxNzAsImV4cCI6MjA4NTM2MDE3MH0.Yo8dT78e7cV7XmvqswpZfQeIl2VW1zuDaNrgzo5bCe4";
 
-// Initialize Real Client
-// ระบบจะทำงานได้ถ้า Key ถูกต้อง โดยไม่ต้องมี Alert กวนใจ
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Custom Storage Adapter for Capacitor
+const CapacitorStorage = {
+  getItem: async (key: string): Promise<string | null> => {
+    const { value } = await Preferences.get({ key });
+    return value;
+  },
+  setItem: async (key: string, value: string): Promise<void> => {
+    await Preferences.set({ key, value });
+  },
+  removeItem: async (key: string): Promise<void> => {
+    await Preferences.remove({ key });
+  },
+};
+
+// Initialize Real Client with Persistent Storage Config
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: CapacitorStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false, // Important for Capacitor to prevent URL hash issues
+  },
+});
 
 // Helper for image upload fallback (if needed locally before upload)
 const convertToBase64 = (file: File): Promise<string> => {

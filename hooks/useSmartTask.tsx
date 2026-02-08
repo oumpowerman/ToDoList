@@ -150,8 +150,8 @@ export const useSmartTask = () => {
       }
     });
     
-    // Request Notification Permissions on Mount
-    NotificationService.requestPermissions();
+    // Initialize Notification Service (Create Channel, Request Perms)
+    NotificationService.init();
 
     return () => subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps

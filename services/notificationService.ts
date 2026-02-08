@@ -8,23 +8,38 @@ const hashCode = (str: string) => {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; 
+    hash |= 0; // Convert to 32bit integer
   }
   return Math.abs(hash); // Ensure positive integer
 };
 
 export const NotificationService = {
-  async requestPermissions() {
+  async init() {
+    if (!Capacitor.isNativePlatform()) return;
+
     try {
-        if (Capacitor.isNativePlatform()) {
-            return await LocalNotifications.requestPermissions();
-        } else if (typeof Notification !== 'undefined') {
-            return await Notification.requestPermission();
-        }
+        // 1. Request Permissions
+        await LocalNotifications.requestPermissions();
+
+        // 2. Create Channel (Required for Android O+)
+        // This ensures sound, vibration, and visibility
+        await LocalNotifications.createChannel({
+            id: 'smarttask_reminders',
+            name: 'SmartTask Reminders',
+            description: 'แจ้งเตือนเมื่อถึงกำหนดส่งงาน',
+            importance: 5, // 5 = High (Heads Up Notification)
+            visibility: 1, // 1 = Public
+            vibration: true,
+            sound: 'beep.wav' 
+        });
+        console.log('Notification Channel Created');
     } catch (e) {
-        console.warn("Notification permissions warning:", e);
+        console.error("Notification Init Error:", e);
     }
-    return { display: 'granted' };
+  },
+
+  async requestPermissions() {
+      return this.init();
   },
 
   async schedule(task: Task) {
@@ -44,7 +59,8 @@ export const NotificationService = {
               body: `อย่าลืมทำ: ${task.title}`,
               id: id,
               schedule: { at: new Date(task.dueDate) },
-              sound: 'beep.wav', // Native sound
+              sound: 'beep.wav', 
+              channelId: 'smarttask_reminders', // Important for Android
               actionTypeId: "",
               extra: { taskId: task.id }
             }]
