@@ -15,6 +15,7 @@ export interface SubTask {
   id: string;
   title: string;
   completed: boolean;
+  duration?: number; // Duration in minutes
 }
 
 export interface Category {
@@ -61,13 +62,12 @@ export interface DiaryEntry {
   content: string;
   mood?: string; // e.g., 'Happy', 'Sad'
   images: string[]; // Base64 or URLs
-  paper_pattern?: string; // 'lined', 'grid', 'dot', 'plain', 'pink'
   created_at: number;
   updated_at: number;
 }
 
 export interface AIResponse {
-  subtasks: string[];
+  subtasks: { title: string; duration: number }[]; // Updated to include duration
   suggestedPriority: Priority;
   suggestedTags: string[];
   suggestedDueDate?: string; // ISO Date string

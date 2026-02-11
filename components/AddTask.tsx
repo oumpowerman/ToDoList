@@ -80,7 +80,8 @@ const AddTask: React.FC<AddTaskProps> = ({ onAdd, categories, onShowAlert }) => 
         dueDate: result.suggestedDueDate ? new Date(result.suggestedDueDate).getTime() : (dueDate ? new Date(dueDate).getTime() : undefined),
         subtasks: result.subtasks.map(st => ({
           id: uuidv4(),
-          title: st,
+          title: st.title,
+          duration: st.duration,
           completed: false
         })),
         tags: result.suggestedTags,

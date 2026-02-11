@@ -13,16 +13,17 @@ export const generateTaskBreakdown = async (taskTitle: string): Promise<AIRespon
   }
 
   try {
-    const model = "gemini-2.0-flash"; // Updated to newer model if available or stick to stable
+    const model = "gemini-2.0-flash"; 
     const currentDate = new Date().toISOString();
     
     const prompt = `Current date and time is ${currentDate}. Analyze this task: "${taskTitle}".
     IMPORTANT: Respond in Thai Language (ภาษาไทย).
     
     1. Break it down into 3-6 actionable subtasks.
-    2. Suggest a priority (Low, Medium, High).
-    3. Suggest 1-3 short tags.
-    4. EXTRACT DATE & TIME: 
+    2. ESTIMATE TIME: For each subtask, estimate the duration in minutes (integer). Be realistic.
+    3. Suggest a priority (Low, Medium, High).
+    4. Suggest 1-3 short tags.
+    5. EXTRACT DATE & TIME: 
        - If the user implies a time (e.g., "นัดคุณส้ม 11 โมง", "พรุ่งนี้บ่าย 2"), convert it to an exact ISO 8601 date string.
        - If no date specified but time is given, assume Today or Tomorrow.
        - If absolutely no time mentioned, return null for suggestedDueDate.
@@ -36,7 +37,17 @@ export const generateTaskBreakdown = async (taskTitle: string): Promise<AIRespon
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            subtasks: { type: Type.ARRAY, items: { type: Type.STRING } },
+            subtasks: { 
+              type: Type.ARRAY, 
+              items: { 
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  duration: { type: Type.INTEGER, description: "Duration in minutes" }
+                },
+                required: ["title", "duration"]
+              } 
+            },
             suggestedPriority: { type: Type.STRING, enum: [Priority.LOW, Priority.MEDIUM, Priority.HIGH] },
             suggestedTags: { type: Type.ARRAY, items: { type: Type.STRING } },
             suggestedDueDate: { type: Type.STRING }

@@ -74,6 +74,19 @@ const TaskBadges: React.FC<{ task: Task, category?: Category, isDone: boolean }>
         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
     }) : null;
 
+    // Calculate Remaining Duration (Dynamic based on completion)
+    // Only sum duration of subtasks where completed is FALSE
+    const remainingMinutes = task.subtasks
+        .filter(st => !st.completed)
+        .reduce((acc, curr) => acc + (curr.duration || 0), 0);
+
+    const formattedDuration = useMemo(() => {
+        if (remainingMinutes === 0) return null;
+        const hrs = Math.floor(remainingMinutes / 60);
+        const mins = remainingMinutes % 60;
+        return hrs > 0 ? `เหลือ ${hrs} ชม. ${mins > 0 ? `${mins} น.` : ''}` : `เหลือ ${mins} นาที`;
+    }, [remainingMinutes]);
+
     return (
         <div className="flex items-center gap-2 mt-2 flex-wrap">
              <span className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded-md border font-bold ${priorityStyles[task.priority]}`}>
@@ -93,6 +106,16 @@ const TaskBadges: React.FC<{ task: Task, category?: Category, isDone: boolean }>
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                      </svg>
                      {formattedDate}
+                 </span>
+             )}
+             
+             {/* Duration Badge (Shows Remaining Time) */}
+             {formattedDuration && !isDone && (
+                 <span className="text-[10px] font-bold flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-blue-700 bg-blue-50 border-blue-200 animate-pop" title="เวลาที่ต้องใช้ (เฉพาะงานที่เหลือ)">
+                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                     </svg>
+                     {formattedDuration}
                  </span>
              )}
 

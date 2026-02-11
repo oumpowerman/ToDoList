@@ -17,7 +17,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
   const [newLog, setNewLog] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [newLinkTitle, setNewLinkTitle] = useState('');
-  const [lastReadCount, setLastReadCount] = useState(0); // For Smart Badge
+  const [lastReadCount, setLastReadCount] = useState(0); 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,25 +27,17 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
           activities: task.activities || [], 
           links: task.links || [] 
       });
-      // Smart Badge: Load last read count
       const storedCount = localStorage.getItem(`task_read_${task.id}`);
       setLastReadCount(storedCount ? parseInt(storedCount) : 0);
-      
-      // Reset to info tab when opening a new task, unless needed otherwise
-      // But user might want to stay on activity if they just closed it? 
-      // Let's default to info for clarity.
       setActiveTab('info');
     }
   }, [task]);
 
-  // Smart Badge Logic: Update read count when switching to activity tab
   useEffect(() => {
       if (activeTab === 'activity' && editedTask) {
           const currentCount = editedTask.activities.length;
           localStorage.setItem(`task_read_${editedTask.id}`, currentCount.toString());
           setLastReadCount(currentCount);
-          
-          // Scroll to bottom
           if (scrollRef.current) {
               setTimeout(() => {
                  if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -63,14 +55,12 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
   };
 
   const handleSubtasksUpdate = (newSubtasks: SubTask[]) => {
-      // Auto-update status if all subtasks are done
       let newStatus = editedTask.status;
       if (newSubtasks.length > 0 && newSubtasks.every(s => s.completed)) {
           newStatus = TaskStatus.DONE;
       } else if (newSubtasks.some(s => s.completed) && newStatus === TaskStatus.TODO) {
           newStatus = TaskStatus.IN_PROGRESS;
       }
-
       const updated = { ...editedTask, subtasks: newSubtasks, status: newStatus };
       setEditedTask(updated);
       onUpdate(updated);
@@ -87,16 +77,13 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
       createdAt: Date.now()
     };
     
-    // Update local state and parent
     const updatedActivities = [...editedTask.activities, newActivity];
     updateField('activities', updatedActivities);
     
-    // Auto update read count so badge doesn't appear for own message
     if (activeTab === 'activity') {
         setLastReadCount(updatedActivities.length);
         localStorage.setItem(`task_read_${editedTask.id}`, updatedActivities.length.toString());
     }
-    
     setNewLog('');
   };
 
@@ -109,7 +96,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
           url: newLinkUrl.includes('http') ? newLinkUrl : `https://${newLinkUrl}`,
           title: newLinkTitle || newLinkUrl
       };
-
       updateField('links', [...editedTask.links, link]);
       setNewLinkUrl('');
       setNewLinkTitle('');
@@ -119,116 +105,186 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
       updateField('links', editedTask.links.filter(l => l.id !== id));
   };
 
-  // Calculate Badge Count
+  // --- Helpers & UI Config ---
   const totalActivities = editedTask.activities.length;
   const unreadCount = Math.max(0, totalActivities - lastReadCount);
 
+  // Pastel Color Configs
+  const statusConfig = {
+      [TaskStatus.TODO]: { bg: 'bg-sky-50', text: 'text-sky-600', border: 'border-sky-100', icon: '☁️' },
+      [TaskStatus.IN_PROGRESS]: { bg: 'bg-peach-50', text: 'text-orange-400', border: 'border-peach-100', icon: '🎨' },
+      [TaskStatus.DONE]: { bg: 'bg-mint-50', text: 'text-emerald-500', border: 'border-mint-100', icon: '🌸' },
+  };
+
+  const priorityConfig = {
+      [Priority.LOW]: { bg: 'bg-slate-50', text: 'text-slate-500', border: 'border-slate-100', label: 'ค่อยๆ ทำ 🍵' },
+      [Priority.MEDIUM]: { bg: 'bg-indigo-50', text: 'text-indigo-500', border: 'border-indigo-100', label: 'ตั้งใจนะ ✨' },
+      [Priority.HIGH]: { bg: 'bg-rose-50', text: 'text-rose-500', border: 'border-rose-100', label: 'สำคัญมาก! 🎀' },
+  };
+
+  const totalMinutes = editedTask.subtasks.reduce((acc, curr) => acc + (curr.duration || 0), 0);
+  const completedMinutes = editedTask.subtasks.filter(s => s.completed).reduce((acc, curr) => acc + (curr.duration || 0), 0);
+  const progressPercent = totalMinutes === 0 ? 0 : Math.round((completedMinutes / totalMinutes) * 100);
+
+  const formatTime = (mins: number) => {
+      if (mins === 0) return '0 น.';
+      const hrs = Math.floor(mins / 60);
+      const m = mins % 60;
+      return hrs > 0 ? `${hrs} ชม. ${m} น.` : `${m} นาที`;
+  };
+
   const renderInfoTab = () => (
-      <div className="flex flex-col gap-6 p-6">
-           {/* Header Input Section */}
-           <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+      <div className="flex flex-col gap-6 p-4 sm:p-8 bg-[#FFFAF5]"> {/* Warm Ivory Background */}
+           
+           {/* Header Area */}
+           <div className="relative">
+                {/* Title Input - Optimized for Thai with fallback */}
                 <input 
                     type="text" 
                     value={editedTask.title}
                     onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
                     onBlur={() => onUpdate(editedTask)}
-                    className="text-xl font-bold text-slate-800 w-full border-b border-transparent focus:border-violet-200 focus:outline-none bg-transparent placeholder-slate-300 pb-2 mb-3 transition-colors"
-                    placeholder="ชื่องาน..."
+                    className="text-3xl font-sans font-bold text-slate-800 w-full bg-transparent border-none focus:ring-0 focus:outline-none placeholder:text-slate-300 leading-normal"
+                    placeholder="วันนี้จะทำอะไรดีนะ..."
                 />
-                <div className="flex gap-3">
-                    <div className="flex flex-col gap-1 w-1/2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">สถานะ</label>
-                        <select 
+                
+                {/* Meta Controls (Pill Shapes) */}
+                <div className="flex flex-wrap gap-3 mt-4">
+                    {/* Status Pill */}
+                    <div className="relative group">
+                         <select 
                             value={editedTask.status}
                             onChange={(e) => updateField('status', e.target.value)}
-                            className={`text-xs p-2 rounded-lg font-bold focus:ring-0 cursor-pointer border-0
-                                ${editedTask.status === TaskStatus.DONE ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}
+                            className={`appearance-none pl-9 pr-8 py-2 rounded-full font-bold text-sm cursor-pointer transition-all border-2
+                                ${statusConfig[editedTask.status].bg} 
+                                ${statusConfig[editedTask.status].text}
+                                ${statusConfig[editedTask.status].border}
+                                focus:outline-none focus:ring-0 hover:brightness-95`}
                         >
                             {Object.values(TaskStatus).map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-base">
+                            {statusConfig[editedTask.status].icon}
+                        </span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 text-[10px]">▼</span>
                     </div>
-                    <div className="flex flex-col gap-1 w-1/2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">ความสำคัญ</label>
-                         <select 
+
+                    {/* Priority Pill */}
+                    <div className="relative">
+                        <select 
                             value={editedTask.priority}
                             onChange={(e) => updateField('priority', e.target.value)}
-                            className={`text-xs p-2 rounded-lg font-bold focus:ring-0 cursor-pointer border-0
-                                ${editedTask.priority === Priority.HIGH ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}
+                            className={`appearance-none pl-4 pr-8 py-2 rounded-full font-bold text-sm cursor-pointer transition-all border-2
+                                ${priorityConfig[editedTask.priority].bg} 
+                                ${priorityConfig[editedTask.priority].text}
+                                ${priorityConfig[editedTask.priority].border}
+                                focus:outline-none focus:ring-0 hover:brightness-95`}
                         >
                              {Object.values(Priority).map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
+                         <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 text-[10px]">▼</span>
                     </div>
                 </div>
            </div>
 
-           {/* Description Section */}
-            <div className="group">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2 px-1">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>
-                    บันทึกช่วยจำ
+           {/* Time Progress (Cute Card) */}
+           {totalMinutes > 0 && (
+               <div className="bg-gradient-to-tr from-[#FFF0F0] via-[#FFFAF0] to-[#F0FFF4] rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 relative overflow-hidden animate-pop">
+                    <div className="flex items-end justify-between mb-3 relative z-10">
+                        <div>
+                             <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-1">ความพยายามทั้งหมด</p>
+                             <div className="text-3xl font-black text-slate-700 font-sans tracking-tight">{formatTime(totalMinutes)}</div>
+                        </div>
+                        <div className="text-right">
+                             <div className="text-[11px] font-bold text-rose-400 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+                                เหลืออีก {formatTime(totalMinutes - completedMinutes)}
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Candy Progress Bar */}
+                    <div className="relative h-4 w-full bg-white/50 rounded-full overflow-hidden border border-slate-100 shadow-inner">
+                         <div 
+                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-rose-300 via-peach-300 to-amber-300 transition-all duration-1000 ease-out rounded-full"
+                            style={{ width: `${progressPercent}%` }}
+                         >
+                            <div className="w-full h-full opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.8) 10px, rgba(255,255,255,0.8) 20px)' }}></div>
+                         </div>
+                    </div>
+                    <div className="text-center mt-2 text-[11px] font-bold text-slate-400 italic">
+                        เก่งมาก! ทำไปได้ {progressPercent}% แล้วนะ 🧸
+                    </div>
+               </div>
+           )}
+
+            {/* Note Section (Softer Memo) */}
+            <div className="bg-[#FFFCF5] border-2 border-[#F7EFE0] p-4 rounded-3xl shadow-sm transition-all duration-300 focus-within:border-amber-200 focus-within:shadow-md">
+                <label className="text-[11px] font-bold text-amber-500/60 uppercase tracking-widest mb-1 flex items-center gap-2">
+                    <span className="text-base">📝</span> บันทึกช่วยจำ
                 </label>
                 <textarea
                     value={editedTask.description || ''}
                     onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
                     onBlur={() => onUpdate(editedTask)}
-                    placeholder="มีรายละเอียดอะไรไหม?"
-                    className="w-full h-24 p-4 rounded-2xl bg-white border border-slate-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-100 transition-all text-sm resize-none"
+                    placeholder="มีอะไรอยากจดไว้ไหม..."
+                    className="w-full h-24 bg-transparent border-none focus:ring-0 focus:outline-none text-slate-600 text-sm resize-none placeholder-amber-200 leading-relaxed font-sans"
                 />
             </div>
 
-            {/* Subtasks Manager (Refactored) */}
-            <SubtaskManager 
-                subtasks={editedTask.subtasks} 
-                onUpdate={handleSubtasksUpdate} 
-            />
+            {/* Subtasks Area */}
+            <div className="bg-white/60 rounded-[2rem] border-2 border-slate-50 shadow-sm p-5 focus-within:bg-white transition-all">
+                 <SubtaskManager 
+                    subtasks={editedTask.subtasks} 
+                    onUpdate={handleSubtasksUpdate} 
+                />
+            </div>
 
-             {/* Link Attachments */}
+             {/* Links (Cute Pastel Tags) */}
             <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2 px-1">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                    แนบลิ้งก์
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2 px-1">
+                    <span className="bg-indigo-50 text-indigo-400 p-1 rounded-lg">🔗</span> แหล่งข้อมูล
                 </label>
-                <div className="space-y-2">
+                <div className="flex flex-wrap gap-2 mb-3">
                     {editedTask.links.map(link => (
-                        <div key={link.id} className="flex items-center justify-between p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl group">
-                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-indigo-700 hover:underline truncate flex-1">
-                                <div className="bg-white p-1.5 rounded-lg shadow-sm">🔗</div>
-                                <span className="text-sm font-medium truncate">{link.title}</span>
+                        <div key={link.id} className="flex items-center gap-2 px-4 py-2 bg-white text-indigo-500 rounded-2xl border-2 border-indigo-50 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all group max-w-full">
+                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold hover:underline truncate">
+                                {link.title}
                             </a>
-                            <button onClick={() => removeLink(link.id)} className="text-slate-300 hover:text-red-500 p-2">
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            <button onClick={() => removeLink(link.id)} className="text-indigo-200 hover:text-rose-400 transition-colors">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
                     ))}
-                    <form onSubmit={addLink} className="flex gap-2 items-center mt-3 bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-                        <input 
-                            className="flex-1 bg-transparent px-2 py-1.5 text-sm focus:outline-none"
-                            placeholder="วาง URL ที่นี่..."
-                            value={newLinkUrl}
-                            onChange={(e) => setNewLinkUrl(e.target.value)}
-                        />
-                         <input 
-                            className="w-1/3 bg-slate-50 rounded-lg px-2 py-1.5 text-xs focus:outline-none border border-slate-100"
-                            placeholder="ชื่อ (ไม่บังคับ)"
-                            value={newLinkTitle}
-                            onChange={(e) => setNewLinkTitle(e.target.value)}
-                        />
-                        <button type="submit" disabled={!newLinkUrl} className="bg-slate-800 text-white p-2 rounded-lg hover:bg-slate-700 disabled:opacity-50">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        </button>
-                    </form>
                 </div>
+                
+                <form onSubmit={addLink} className="flex gap-2 items-center bg-white/80 p-1.5 rounded-2xl border-2 border-slate-50 focus-within:border-indigo-100 transition-all">
+                    <input 
+                        className="flex-1 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-0 placeholder-slate-300 font-sans"
+                        placeholder="วาง URL ที่นี่..."
+                        value={newLinkUrl}
+                        onChange={(e) => setNewLinkUrl(e.target.value)}
+                    />
+                     <input 
+                        className="w-1/3 bg-slate-50/50 border-none px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-0 placeholder-slate-300 font-sans"
+                        placeholder="ตั้งชื่อ..."
+                        value={newLinkTitle}
+                        onChange={(e) => setNewLinkTitle(e.target.value)}
+                    />
+                    <button type="submit" disabled={!newLinkUrl} className="bg-indigo-400 text-white p-2.5 rounded-xl hover:bg-indigo-500 disabled:opacity-30 shadow-sm transition-all">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                    </button>
+                </form>
             </div>
             <div className="h-10"></div>
       </div>
   );
 
   const renderActivityTab = () => (
-      <div className="flex flex-col h-full bg-slate-100/50 sm:bg-slate-50">
-           <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={scrollRef}>
+      <div className="flex flex-col h-full bg-[#FCFDFE]">
+           <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar" ref={scrollRef}>
                 <div className="text-center py-4">
-                    <span className="text-xs text-slate-400 bg-slate-200/50 px-3 py-1 rounded-full">
-                        สร้างเมื่อ {new Date(editedTask.createdAt).toLocaleString('th-TH')}
+                    <span className="text-[10px] font-bold text-slate-300 bg-slate-50 px-4 py-1.5 rounded-full border border-slate-100 uppercase tracking-widest">
+                        เริ่มต้นบันทึกเมื่อ {new Date(editedTask.createdAt).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' })}
                     </span>
                 </div>
                 
@@ -237,17 +293,17 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
                     return (
                         <div key={log.id} className={`flex ${isSystem ? 'justify-center' : 'justify-end'}`}>
                             {isSystem ? (
-                                <div className="text-xs text-slate-400 flex items-center gap-2 my-2">
-                                     <span className="h-px w-8 bg-slate-200"></span>
+                                <div className="text-xs text-slate-400 flex items-center gap-2 my-2 italic opacity-60">
+                                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                                      <span>{log.content}</span>
-                                     <span className="h-px w-8 bg-slate-200"></span>
+                                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                                 </div>
                             ) : (
-                                <div className="max-w-[85%] flex flex-col items-end">
-                                    <div className="bg-white text-slate-700 px-4 py-2.5 rounded-2xl rounded-tr-none shadow-sm border border-slate-100 text-sm leading-relaxed">
+                                <div className="max-w-[80%] flex flex-col items-end animate-slide-up">
+                                    <div className="bg-white text-slate-600 px-5 py-3.5 rounded-3xl rounded-tr-none shadow-sm border border-slate-100 text-sm leading-relaxed relative font-sans">
                                         {log.content}
                                     </div>
-                                    <span className="text-[10px] text-slate-400 mt-1 mr-1">
+                                    <span className="text-[9px] text-slate-300 mt-1.5 mr-2 font-bold uppercase">
                                         {new Date(log.createdAt).toLocaleString('th-TH', { hour: '2-digit', minute:'2-digit'})}
                                     </span>
                                 </div>
@@ -258,22 +314,22 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
                 <div className="h-4"></div>
            </div>
 
-           <div className="bg-white p-3 border-t border-slate-100 sticky bottom-0 z-20">
-               <form onSubmit={addActivityLog} className="flex items-end gap-2">
+           <div className="bg-white p-4 border-t border-slate-50 sticky bottom-0 z-20">
+               <form onSubmit={addActivityLog} className="flex items-end gap-3 bg-slate-50/80 p-2 rounded-[2rem] border-2 border-slate-100 focus-within:bg-white focus-within:border-indigo-100 transition-all">
                     <textarea
                         value={newLog}
                         onChange={(e) => setNewLog(e.target.value)}
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-50 transition-all resize-none max-h-24"
-                        placeholder="พิมพ์บันทึก..."
+                        className="flex-1 bg-transparent border-none rounded-2xl px-4 py-3 text-sm focus:ring-0 focus:outline-none transition-all resize-none max-h-24 placeholder-slate-300 font-sans"
+                        placeholder="พิมพ์อัปเดตงานที่นี่..."
                         rows={1}
                         style={{ minHeight: '44px' }}
                     />
                     <button 
                         type="submit" 
                         disabled={!newLog.trim()}
-                        className="p-3 bg-violet-600 text-white rounded-full hover:bg-violet-700 disabled:opacity-50 disabled:bg-slate-200 transition-all shadow-lg shadow-violet-200 flex-shrink-0 mb-0.5"
+                        className="w-12 h-12 bg-indigo-400 text-white rounded-full hover:bg-indigo-500 disabled:opacity-30 transition-all shadow-md flex items-center justify-center flex-shrink-0"
                     >
-                        <svg className="w-5 h-5 translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                        <svg className="w-6 h-6 translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                     </button>
                </form>
            </div>
@@ -282,37 +338,40 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, isOpen, onClose
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-4xl">
-      <div className="flex flex-col h-full sm:h-[600px]">
-          {/* Tabs */}
-          <div className="flex border-b border-slate-100 bg-white shrink-0 sticky top-0 z-30">
-              <button 
-                onClick={() => setActiveTab('info')}
-                className={`flex-1 py-4 text-sm font-bold border-b-2 transition-all flex items-center justify-center gap-2
-                    ${activeTab === 'info' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-              >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  รายละเอียด
-              </button>
-              <button 
-                onClick={() => setActiveTab('activity')}
-                className={`flex-1 py-4 text-sm font-bold border-b-2 transition-all flex items-center justify-center gap-2
-                    ${activeTab === 'activity' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
-              >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                  ประวัติ/แชท
-                  {/* Smart Badge: Only show if unreadCount > 0 */}
-                  {unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full animate-pulse shadow-sm">
-                          {unreadCount}
-                      </span>
-                  )}
-              </button>
-              <button onClick={onClose} className="sm:hidden px-4 text-slate-300">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
+      <div className="flex flex-col h-full sm:h-[680px] bg-[#FFFAF5] font-sans"> 
+          {/* Tabs Navigation */}
+          <div className="pt-3 px-3 bg-white sticky top-0 z-30 shadow-sm border-b border-slate-50">
+             <div className="flex justify-end items-center mb-2 px-2">
+                 <button onClick={onClose} className="sm:hidden p-2 text-slate-300 hover:bg-rose-50 hover:text-rose-400 rounded-full transition-colors">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                 </button>
+             </div>
+             
+             {/* Pill Styled Tabs */}
+             <div className="flex p-1.5 bg-slate-50 rounded-2xl mx-4 mb-4 relative shadow-inner border border-slate-100">
+                 <button 
+                    onClick={() => setActiveTab('info')}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all relative z-10 flex items-center justify-center gap-2
+                        ${activeTab === 'info' ? 'bg-white text-slate-800 shadow-md scale-[1.02]' : 'text-slate-400 hover:text-slate-600'}`}
+                 >
+                     <span className="text-lg">📒</span> รายละเอียด
+                 </button>
+                 <button 
+                    onClick={() => setActiveTab('activity')}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all relative z-10 flex items-center justify-center gap-2
+                        ${activeTab === 'activity' ? 'bg-white text-slate-800 shadow-md scale-[1.02]' : 'text-slate-400 hover:text-slate-600'}`}
+                 >
+                     <span className="text-lg">💬</span> ความคืบหน้า
+                     {unreadCount > 0 && (
+                        <span className="bg-rose-400 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse shadow-sm">
+                            {unreadCount}
+                        </span>
+                     )}
+                 </button>
+             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50 sm:bg-white relative">
+          <div className="flex-1 overflow-y-auto no-scrollbar relative">
              {activeTab === 'info' ? renderInfoTab() : renderActivityTab()}
           </div>
       </div>

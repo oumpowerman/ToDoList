@@ -36,6 +36,50 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, nickname }) => {
     else if (score >= 40) { grade = 'C'; message = `สู้หน่อย ${userName}! งานเริ่มกองเป็นภูเขาแล้วนะ 🐷`; gradient = 'from-orange-400 to-red-500'; }
     else { grade = 'D'; message = `วิกฤตแล้ว ${userName}! รีบเคลียร์งานด่วนก่อนไฟลนก้น 🔥`; gradient = 'from-red-500 to-rose-700'; }
 
+    // --- Weekly Workload Calculation ---
+    const now = new Date();
+    // Get start of week (Monday)
+    const startOfWeek = new Date(now);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    // Get end of week (Sunday)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Filter tasks due this week
+    const weeklyTasks = tasks.filter(t => {
+        if (!t.dueDate) return false;
+        const d = new Date(t.dueDate);
+        return d >= startOfWeek && d <= endOfWeek;
+    });
+
+    // Sum durations
+    const weeklyTotalMinutes = weeklyTasks.reduce((acc, t) => {
+        const subtaskSum = t.subtasks.reduce((sAcc, s) => sAcc + (s.duration || 0), 0);
+        return acc + subtaskSum;
+    }, 0);
+
+    const weeklyDoneMinutes = weeklyTasks.reduce((acc, t) => {
+        // If task is DONE, count all subtasks. If not, count only completed subtasks.
+        // Or simpler: Just count completed subtasks always.
+        const subtaskDoneSum = t.subtasks
+            .filter(s => s.completed)
+            .reduce((sAcc, s) => sAcc + (s.duration || 0), 0);
+        return acc + subtaskDoneSum;
+    }, 0);
+
+    const weeklyRemainingMinutes = weeklyTotalMinutes - weeklyDoneMinutes;
+
+    const formatHours = (mins: number) => {
+        if (mins === 0) return '0';
+        const hrs = (mins / 60).toFixed(1);
+        return hrs.endsWith('.0') ? hrs.slice(0, -2) : hrs;
+    };
+
     // Last 7 Days Activity
     const last7Days = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
@@ -61,7 +105,9 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, nickname }) => {
         total, completed, pending, completionRate, 
         score, grade, message, gradient,
         activityData,
-        highPriorityTotal, highPriorityDone
+        highPriorityTotal, highPriorityDone,
+        weeklyTotalMinutes, weeklyDoneMinutes, weeklyRemainingMinutes, weeklyTaskCount: weeklyTasks.length,
+        formatHours
     };
   }, [tasks, userName]);
 
@@ -76,7 +122,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, nickname }) => {
   }
 
   return (
-    <div className="p-2 space-y-6 animate-slide-up pb-20 md:pb-0">
+    <div className="p-2 space-y-4 animate-slide-up pb-20 md:pb-0">
       
       {/* 1. Hero Score Card */}
       <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${stats.gradient} p-6 text-white shadow-xl`}>
@@ -114,7 +160,48 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, nickname }) => {
           </div>
       </div>
 
-      {/* 2. Stats Grid */}
+      {/* 2. Weekly Workload Card (New Feature) */}
+      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-6 relative overflow-hidden group">
+         <div className="absolute right-0 top-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-10 -mt-10 opacity-50"></div>
+         
+         {/* Left: Summary */}
+         <div className="flex-1 z-10">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-1">
+                <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg text-lg">⏱</span>
+                ภาระงานสัปดาห์นี้
+                <span className="text-xs text-slate-400 font-normal bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">นับเฉพาะที่มีกำหนดส่ง</span>
+            </h3>
+            <div className="flex items-baseline gap-1 mt-2">
+                <span className="text-4xl font-black text-slate-800">{stats.formatHours(stats.weeklyTotalMinutes)}</span>
+                <span className="text-sm font-bold text-slate-500">ชั่วโมง</span>
+            </div>
+            <p className="text-xs text-slate-400 mt-1">จาก {stats.weeklyTaskCount} งานที่ต้องส่งในสัปดาห์นี้</p>
+         </div>
+
+         {/* Right: Progress Detail */}
+         <div className="flex-1 flex flex-col justify-center gap-3 z-10 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
+            <div className="flex items-center justify-between text-sm font-bold">
+                <span className="text-emerald-600">เสร็จแล้ว {stats.formatHours(stats.weeklyDoneMinutes)} ชม.</span>
+                <span className="text-rose-500">เหลือ {stats.formatHours(stats.weeklyRemainingMinutes)} ชม.</span>
+            </div>
+            
+            <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                <div 
+                    className="h-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)] transition-all duration-700" 
+                    style={{ width: `${(stats.weeklyDoneMinutes / (stats.weeklyTotalMinutes || 1)) * 100}%` }}
+                ></div>
+            </div>
+            
+            <div className="text-xs text-slate-400 text-right">
+                {stats.weeklyTotalMinutes > 0 
+                  ? `${Math.round((stats.weeklyDoneMinutes / stats.weeklyTotalMinutes) * 100)}% ของเป้าหมายสัปดาห์นี้`
+                  : 'ยังไม่มีงานที่ระบุเวลาในสัปดาห์นี้'
+                }
+            </div>
+         </div>
+      </div>
+
+      {/* 3. Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center text-center hover:border-violet-200 transition-colors">
               <span className="text-3xl mb-2">📝</span>
@@ -138,7 +225,7 @@ const Dashboard: React.FC<DashboardProps> = ({ tasks, nickname }) => {
           </div>
       </div>
 
-      {/* 3. Weekly Activity Chart */}
+      {/* 4. Weekly Activity Chart */}
       <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
